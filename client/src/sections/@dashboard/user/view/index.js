@@ -1,0 +1,1 @@
+export {default as UserCreateView} from './user-create-view';
