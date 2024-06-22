@@ -1,0 +1,10 @@
+const CameraController = require('../controllers/CameraController.js');
+const express = require('express');
+const router = express.Router();
+router.get('/', CameraController.index);
+router.get('/:id', CameraController.show);
+router.post('/', CameraController.create);
+router.put('/:id', CameraController.update);
+router.delete('/:id', CameraController.destroy);
+// router.get('/scan-cameras', CameraController.getCameras);
+module.exports = router;
