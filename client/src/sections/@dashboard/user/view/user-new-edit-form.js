@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect, useReducer, useState } from 'react';
+import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 
@@ -6,62 +6,39 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
-
 import { useRouter } from 'src/hooks/useRouter';
-
 import { Autocomplete, Chip, TextField } from '@mui/material';
-import { _roleType } from 'src/_mock/user';
-import { RHFUploadAvatar } from 'src/components/rhf-upload';
-
-// ----------------------------------------------------------------------
+import { useDispatch } from 'react-redux';
+import { createUser, updateUser } from 'src/data/slice/userSlice';
 
 export default function UserNewEditForm({ currentUser, id }) {
   const router = useRouter();
-
+const dispatch = useDispatch();
   const NewUserSchema = Yup.object().shape({
-    firstName: Yup.string().required('Name is required'),
+    First_name: Yup.string().required('First name is required'),
+    First_name: Yup.string().required('Last name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
-    verified: Yup.boolean(),
-    password: Yup.string().required('password is required'),
-    userType: Yup.string().required('User Type is required'),
-    role: Yup.string().required('Role is required'),
-    profilePicUrl: Yup.mixed().nullable().required('Avatar is required'),
+    phone: Yup.number(),
+    password: Yup.string().required('Password is required'),
+    status: Yup.string(),
   });
 
   const defaultValues = useMemo(
     () => ({
-      firstName: currentUser?.firstName || '',
+      First_name: currentUser?.First_name || '',
+      Last_name: currentUser?.Last_name || '',
       email: currentUser?.email || '',
-      userType: currentUser?.userType || '',
-      role: currentUser?.role || '',
+      phone: currentUser?.phone || '',
       password: currentUser?.password || '',
-      verified: currentUser?.verified || false,
-      profilePicUrl: currentUser?.profilePicUrl || null,
+      status: currentUser?.status || '',
     }),
     [currentUser]
   );
 
-  const [userType, setUserType] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    fetchUserType();
-  }, []);
-
-  const fetchUserType = async () => {
-    try {
-      // Simulate fetching user types from an API
-      const response = await fetch('/api/userTypes');
-      const data = await response.json();
-      setUserType(data);
-    } catch (error) {
-      console.error('Error fetching user types:', error);
-    }
-  };
 
   const formik = useFormik({
     initialValues: defaultValues,
@@ -69,34 +46,22 @@ export default function UserNewEditForm({ currentUser, id }) {
     onSubmit: async (values, { setSubmitting, resetForm }) => {
       try {
         setIsSubmitting(true);
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        if (id) {
+          // Update user
+          await dispatch(updateUser({ id, userData: values })).unwrap();
+        } else {
+          // Create user
+          await dispatch(createUser(values)).unwrap();
+        }
         resetForm();
-        // Simulate API call to create/update user
-        console.log('Submitting form with values:', values);
         setIsSubmitting(false);
         router.push('/dashboard/user');
-        console.info('DATA', values);
       } catch (error) {
-        console.error(error);
+        console.error('Failed to submit form:', error);
         setIsSubmitting(false);
       }
     },
   });
-
-  const handleDrop = useCallback(
-    (acceptedFiles) => {
-      const file = acceptedFiles[0];
-
-      const newFile = Object.assign(file, {
-        preview: URL.createObjectURL(file),
-      });
-
-      if (file) {
-        formik.setFieldValue('profilePicUrl', newFile);
-      }
-    },
-    [formik]
-  );
 
   return (
     <form onSubmit={formik.handleSubmit}>
@@ -104,26 +69,7 @@ export default function UserNewEditForm({ currentUser, id }) {
         <Grid xs={12} md={4}>
           <Card sx={{ pt: 10, pb: 5, px: 3 }}>
             <Box sx={{ mb: 5 }}>
-              {/* <RHFUploadAvatar
-                name="profilePicUrl"
-                maxSize={3145728}
-                onDrop={handleDrop}
-                helperText={
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      mt: 3,
-                      mx: 'auto',
-                      display: 'block',
-                      textAlign: 'center',
-                      color: 'text.disabled',
-                    }}
-                  >
-                    Allowed *.jpeg, *.jpg, *.png, *.gif
-                    <br /> max size of {3145728}
-                  </Typography>
-                }
-              /> */}
+              {/* Add Avatar upload here if needed */}
             </Box>
 
             {currentUser && (
@@ -149,10 +95,17 @@ export default function UserNewEditForm({ currentUser, id }) {
             >
               <TextField
                 fullWidth
-                label="Full Name"
-                {...formik.getFieldProps('firstName')}
-                error={formik.touched.firstName && Boolean(formik.errors.firstName)}
-                helperText={formik.touched.firstName && formik.errors.firstName}
+                label="First Name"
+                {...formik.getFieldProps('First_name')}
+                error={formik.touched.First_name && Boolean(formik.errors.First_name)}
+                helperText={formik.touched.First_name && formik.errors.First_name}
+              />
+              <TextField
+                fullWidth
+                label="Last Name"
+                {...formik.getFieldProps('Last_name')}
+                error={formik.touched.Last_name && Boolean(formik.errors.Last_name)}
+                helperText={formik.touched.Last_name && formik.errors.Last_name}
               />
               <TextField
                 fullWidth
@@ -163,67 +116,24 @@ export default function UserNewEditForm({ currentUser, id }) {
               />
               <TextField
                 fullWidth
+                label="Phone Number"
+                {...formik.getFieldProps('phone')}
+                error={formik.touched.phone && Boolean(formik.errors.phone)}
+                helperText={formik.touched.phone && formik.errors.phone}
+              />
+              <TextField
+                fullWidth
                 label="Password"
                 {...formik.getFieldProps('password')}
                 error={formik.touched.password && Boolean(formik.errors.password)}
                 helperText={formik.touched.password && formik.errors.password}
               />
-              <Autocomplete
+              <TextField
                 fullWidth
-                options={_roleType}
-                freeSolo
-                value={formik.values.role}
-                onChange={(event, newValue) => formik.setFieldValue('role', newValue)}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip
-                      {...getTagProps({ index })}
-                      key={index}
-                      label={option}
-                      size="small"
-                      color="info"
-                      variant="soft"
-                    />
-                  ))
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Role"
-                    error={formik.touched.role && Boolean(formik.errors.role)}
-                    helperText={formik.touched.role && formik.errors.role}
-                  />
-                )}
-              />
-              <Autocomplete
-                fullWidth
-                options={userType.map((option) => ({
-                  id: option._id,
-                  name: option.name,
-                }))}
-                getOptionLabel={(option) => option.name}
-                value={userType.find((option) => option._id === formik.values.userType) || null}
-                onChange={(event, newValue) => formik.setFieldValue('userType', newValue?.id)}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip
-                      {...getTagProps({ index })}
-                      key={index}
-                      label={option.name}
-                      size="small"
-                      color="info"
-                      variant="soft"
-                    />
-                  ))
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="User Type"
-                    error={formik.touched.userType && Boolean(formik.errors.userType)}
-                    helperText={formik.touched.userType && formik.errors.userType}
-                  />
-                )}
+                label="Status"
+                {...formik.getFieldProps('status')}
+                error={formik.touched.status && Boolean(formik.errors.status)}
+                helperText={formik.touched.status && formik.errors.status}
               />
             </Box>
 

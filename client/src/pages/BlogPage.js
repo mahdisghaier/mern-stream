@@ -1,47 +1,32 @@
 import { Helmet } from 'react-helmet-async';
-// @mui
 import { Grid, Button, Container, Stack, Typography } from '@mui/material';
-// components
 import Iconify from '../components/iconify';
-import { BlogPostCard, BlogPostsSort, BlogPostsSearch } from '../sections/@dashboard/blog';
-// mock
-import POSTS from '../_mock/blog';
+import { About } from '../sections/@dashboard/aboutUs/index'; // Assuming a TeamMemberCard component
+import TEAM_MEMBERS from '../_mock/teamMembers'; // Mock data for team members
 
 // ----------------------------------------------------------------------
 
-const SORT_OPTIONS = [
-  { value: 'latest', label: 'Latest' },
-  { value: 'popular', label: 'Popular' },
-  { value: 'oldest', label: 'Oldest' },
-];
-
-// ----------------------------------------------------------------------
-
-export default function BlogPage() {
+export default function AboutUsPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Blog | Minimal UI </title>
+        <title>About Us </title>
       </Helmet>
 
       <Container>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
           <Typography variant="h4" gutterBottom>
-            Blog
+            About Us
           </Typography>
+          {/* Replace with any action button as needed */}
           <Button variant="contained" startIcon={<Iconify icon="eva:plus-fill" />}>
-            New Post
+            Action Button
           </Button>
         </Stack>
 
-        <Stack mb={5} direction="row" alignItems="center" justifyContent="space-between">
-          <BlogPostsSearch posts={POSTS} />
-          <BlogPostsSort options={SORT_OPTIONS} />
-        </Stack>
-
         <Grid container spacing={3}>
-          {POSTS.map((post, index) => (
-            <BlogPostCard key={post.id} post={post} index={index} />
+          {TEAM_MEMBERS.map((member, index) => (
+            <About key={member.id} member={member} index={index} />
           ))}
         </Grid>
       </Container>

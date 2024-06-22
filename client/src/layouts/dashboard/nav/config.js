@@ -22,8 +22,8 @@ const navConfig = [
     icon: icon("ic_user"),
   },
       {
-    title: "video",
-        path: "/dashboard/video",
+    title: "room",
+        path: "/dashboard/room",
     icon: icon("ic_video"),
       },
   {

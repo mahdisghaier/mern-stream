@@ -1,8 +1,8 @@
 import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
-import { useState } from 'react';
-// @mui
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Card,
   Table,
@@ -13,7 +13,6 @@ import {
   Popover,
   Checkbox,
   TableRow,
-  MenuItem,
   TableBody,
   TableCell,
   Container,
@@ -21,30 +20,22 @@ import {
   IconButton,
   TableContainer,
   TablePagination,
+  MenuItem,
 } from '@mui/material';
-// components
 import Label from '../components/label';
 import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
-// sections
-
-// mock
-import USERLIST from '../_mock/user';
+import { fetchRooms } from '../data/slice/CameraSlice'; 
+import { useDispatch, useSelector } from 'react-redux';
+import { useRouter } from 'src/hooks/useRouter';
 import { VideosListToolbar } from 'src/sections/@dashboard/videos';
 import VideoListHead from 'src/sections/@dashboard/videos/VideosListHead';
 
-// ----------------------------------------------------------------------
-
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', alignRight: false },
-  { id: 'company', label: 'Company', alignRight: false },
-  { id: 'role', label: 'Role', alignRight: false },
-  { id: 'isVerified', label: 'Verified', alignRight: false },
-  { id: 'status', label: 'Status', alignRight: false },
-  { id: '' },
+  { id: 'description', label: 'Description', alignRight: false },
+  { id: 'numberOfCameras', label: 'Number of Cameras', alignRight: false },
 ];
-
-// ----------------------------------------------------------------------
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -70,24 +61,30 @@ function applySortFilter(array, comparator, query) {
     return a[1] - b[1];
   });
   if (query) {
-    return filter(array, (_user) => _user.name.toLowerCase().indexOf(query.toLowerCase()) !== -1);
+    return filter(array, (_room) => _room.name.toLowerCase().indexOf(query.toLowerCase()) !== -1);
   }
   return stabilizedThis.map((el) => el[0]);
 }
 
-export default function VideosPage() {
+export default function RoomsPage() {
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const { rooms, loading, error } = useSelector((state) => state.camera);
+  console.log('rooms:', rooms);
+
+  useEffect(() => {
+    dispatch(fetchRooms());
+  }, [dispatch]);
+
   const [open, setOpen] = useState(null);
+  const [scanResults, setScanResults] = useState([]);
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const [page, setPage] = useState(0);
-
   const [order, setOrder] = useState('asc');
-
   const [selected, setSelected] = useState([]);
-
   const [orderBy, setOrderBy] = useState('name');
-
   const [filterName, setFilterName] = useState('');
-
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const handleOpenMenu = (event) => {
@@ -106,7 +103,7 @@ export default function VideosPage() {
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = USERLIST.map((n) => n.name);
+      const newSelecteds = rooms.map((n) => n.name);
       setSelected(newSelecteds);
       return;
     }
@@ -142,25 +139,36 @@ export default function VideosPage() {
     setFilterName(event.target.value);
   };
 
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - USERLIST.length) : 0;
+  const handleScanForRooms = async (event) => {
+    setAnchorEl(event.currentTarget);
+    try {
+      const response = await axios.get(''); // Update with your API endpoint for scanning rooms
+      setScanResults(response.data);
+      setOpen(true);
+    } catch (error) {
+      console.error('Error scanning for rooms:', error);
+    }
+  };
 
-  const filteredUsers = applySortFilter(USERLIST, getComparator(order, orderBy), filterName);
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rooms.length) : 0;
 
-  const isNotFound = !filteredUsers.length && !!filterName;
+  const filteredRooms = applySortFilter(rooms, getComparator(order, orderBy), filterName);
+
+  const isNotFound = !filteredRooms.length && !!filterName;
 
   return (
     <>
       <Helmet>
-        <title> Videos </title>
+        <title> Rooms </title>
       </Helmet>
 
       <Container>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
           <Typography variant="h4" gutterBottom>
-            Videos
+            Rooms
           </Typography>
-          <Button variant="contained" startIcon={<Iconify icon="eva:plus-fill" />}>
-            New Video
+          <Button variant="contained" startIcon={<Iconify icon="eva:plus-fill" />} href={'/dashboard/room/new'}>
+            Add Room
           </Button>
         </Stack>
 
@@ -174,49 +182,32 @@ export default function VideosPage() {
                   order={order}
                   orderBy={orderBy}
                   headLabel={TABLE_HEAD}
-                  rowCount={USERLIST.length}
+                  rowCount={rooms.length}
                   numSelected={selected.length}
                   onRequestSort={handleRequestSort}
                   onSelectAllClick={handleSelectAllClick}
                 />
                 <TableBody>
-                  {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                    const { id, name, role, status, company, avatarUrl, isVerified } = row;
-                    const selectedUser = selected.indexOf(name) !== -1;
-
-                    return (
-                      <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
-                        <TableCell padding="checkbox">
-                          <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
-                        </TableCell>
-
-                        <TableCell component="th" scope="row" padding="none">
-                          <Stack direction="row" alignItems="center" spacing={2}>
-                            <Avatar alt={name} src={avatarUrl} />
-                            <Typography variant="subtitle2" noWrap>
-                              {name}
-                            </Typography>
-                          </Stack>
-                        </TableCell>
-
-                        <TableCell align="left">{company}</TableCell>
-
-                        <TableCell align="left">{role}</TableCell>
-
-                        <TableCell align="left">{isVerified ? 'Yes' : 'No'}</TableCell>
-
-                        <TableCell align="left">
-                          <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
-                        </TableCell>
-
-                        <TableCell align="right">
-                          <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
-                            <Iconify icon={'eva:more-vertical-fill'} />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {filteredRooms.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
+                    <TableRow hover key={row.id} tabIndex={-1} role="checkbox" selected={selected.indexOf(row.name) !== -1} >
+                      <TableCell padding="checkbox" >
+                        <Checkbox
+                          checked={selected.indexOf(row.name) !== -1}
+                          onChange={(event) => handleClick(event, row.name)}
+                        />
+                      </TableCell>
+                      <TableCell component="th" scope="row" padding="none" onClick={()=>router.push(`/Dashboard/room/${row?.name}`) }>
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          
+                          <Typography variant="subtitle2" noWrap>
+                            {row.name}
+                          </Typography>
+                        </Stack>
+                      </TableCell>
+                      <TableCell align="left">{row.description}</TableCell>
+                      <TableCell align="left">{row.numberOfCameras}</TableCell>
+                    </TableRow>
+                  ))}
                   {emptyRows > 0 && (
                     <TableRow style={{ height: 53 * emptyRows }}>
                       <TableCell colSpan={6} />
@@ -236,7 +227,6 @@ export default function VideosPage() {
                           <Typography variant="h6" paragraph>
                             Not found
                           </Typography>
-
                           <Typography variant="body2">
                             No results found for &nbsp;
                             <strong>&quot;{filterName}&quot;</strong>.
@@ -254,43 +244,43 @@ export default function VideosPage() {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={USERLIST.length}
+            count={rooms.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
         </Card>
-      </Container>
 
-      <Popover
-        open={Boolean(open)}
-        anchorEl={open}
-        onClose={handleCloseMenu}
-        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{
-          sx: {
-            p: 1,
-            width: 140,
-            '& .MuiMenuItem-root': {
-              px: 1,
-              typography: 'body2',
-              borderRadius: 0.75,
+        <Popover
+          open={Boolean(anchorEl)}
+          anchorEl={anchorEl}
+          onClose={() => setAnchorEl(null)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          PaperProps={{
+            sx: {
+              p: 1,
+              width: 300,
+              '& .MuiMenuItem-root': {
+                px: 1,
+                typography: 'body2',
+                borderRadius: 0.75,
+              },
             },
-          },
-        }}
-      >
-        <MenuItem>
-          <Iconify icon={'eva:edit-fill'} sx={{ mr: 2 }} />
-          Edit
-        </MenuItem>
-
-        <MenuItem sx={{ color: 'error.main' }}>
-          <Iconify icon={'eva:trash-2-outline'} sx={{ mr: 2 }} />
-          Delete
-        </MenuItem>
-      </Popover>
+          }}
+        >
+          {scanResults.length > 0 ? (
+            scanResults.map((room) => (
+              <MenuItem key={room.id}>
+                {room.name} - {room.ip} - {room.model}
+              </MenuItem>
+            ))
+          ) : (
+            <MenuItem>No rooms found</MenuItem>
+          )}
+        </Popover>
+      </Container>
     </>
   );
 }

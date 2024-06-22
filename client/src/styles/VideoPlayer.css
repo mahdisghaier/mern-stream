@@ -1,0 +1,23 @@
+/* .video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px;
+    background-color: #000; /* Black background for a CCTV-like look 
+    border: 2px solid #00ff00; /* Green border similar to CCTV displays 
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5); /* Green shadow for effect 
+  } */
+  .video-container {
+   
+    margin-top: 2rem;
+    display: grid; /* Use grid layout to display videos side-by-side */
+    grid-template-columns: repeat(2, 1fr); /* Two columns with equal width */
+    grid-template-rows: repeat(2, 1fr);
+    grid-gap: 10px; /* Gap between the video players */
+    justify-content: center; /* Center align the videos */}
+  
